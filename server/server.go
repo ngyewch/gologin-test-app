@@ -2,21 +2,22 @@ package server
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/dghubble/gologin/v2"
-	"github.com/dghubble/gologin/v2/github"
+	gologinGithub "github.com/dghubble/gologin/v2/github"
+	gologinOauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/dghubble/sessions"
+	"github.com/google/go-github/v48/github"
 	"github.com/ngyewch/gologin-test-app/resources"
 	"golang.org/x/oauth2"
-	githubOAuth2 "golang.org/x/oauth2/github"
+	oauth2Github "golang.org/x/oauth2/github"
 	"html/template"
 	"net/http"
 	"net/url"
 )
 
 const (
-	sessionType            = "type"
-	sessionGithubUserId    = "githubID"
-	sessionGithubUserLogin = "githubUsername"
+	sessionProfile = "profile"
 )
 
 type Server struct {
@@ -26,18 +27,14 @@ type Server struct {
 	serveMux     *http.ServeMux
 }
 
+type ProfileData struct {
+	Type   string        `json:"type"`
+	Github *github.User  `json:"github"`
+	Oauth2 *oauth2.Token `json:"oauth2"`
+}
+
 type LoginTemplateData struct {
 	GithubEnabled bool
-}
-
-type ProfileTemplateData struct {
-	Type   string
-	Github *GithubProfile
-}
-
-type GithubProfile struct {
-	UserId    int64
-	UserLogin string
 }
 
 func New(config *Config) (*Server, error) {
@@ -74,7 +71,7 @@ func New(config *Config) (*Server, error) {
 	mux.HandleFunc("/oauth2/logout", server.logoutHandler)
 
 	if config.Github != nil {
-		callbackUrl, err := url.Parse("/oauth2/github/callback")
+		redirectUrl, err := resolveUrl(baseUrl, "/oauth2/github/callback")
 		if err != nil {
 			return nil, err
 		}
@@ -82,11 +79,47 @@ func New(config *Config) (*Server, error) {
 		oauth2Config := &oauth2.Config{
 			ClientID:     config.Github.ClientId,
 			ClientSecret: config.Github.ClientSecret,
-			RedirectURL:  baseUrl.ResolveReference(callbackUrl).String(),
-			Endpoint:     githubOAuth2.Endpoint,
+			RedirectURL:  redirectUrl.String(),
+			Endpoint:     oauth2Github.Endpoint,
 		}
-		mux.Handle("/oauth2/github/login", github.StateHandler(stateConfig, github.LoginHandler(oauth2Config, nil)))
-		mux.Handle("/oauth2/github/callback", github.StateHandler(stateConfig, github.CallbackHandler(oauth2Config, http.HandlerFunc(server.issueGithubSession), nil)))
+		mux.Handle("/oauth2/github/login", gologinGithub.StateHandler(stateConfig, gologinGithub.LoginHandler(oauth2Config, nil)))
+		mux.Handle("/oauth2/github/callback", gologinGithub.StateHandler(stateConfig, gologinGithub.CallbackHandler(oauth2Config, http.HandlerFunc(server.issueGithubSession), nil)))
+	}
+
+	if config.Oauth2 != nil {
+		redirectUrl, err := resolveUrl(baseUrl, "/oauth2/callback")
+		if err != nil {
+			return nil, err
+		}
+
+		endpointUrl, err := url.Parse(config.Oauth2.Endpoint)
+		if err != nil {
+			return nil, err
+		}
+
+		authUrl, err := resolveUrl(endpointUrl, "oauth2/auth")
+		if err != nil {
+			return nil, err
+		}
+
+		tokenUrl, err := resolveUrl(endpointUrl, "oauth2/token")
+		if err != nil {
+			return nil, err
+		}
+
+		endpoint := oauth2.Endpoint{
+			AuthURL:  authUrl.String(),
+			TokenURL: tokenUrl.String(),
+		}
+		oauth2Config := &oauth2.Config{
+			ClientID:     config.Oauth2.ClientId,
+			ClientSecret: config.Oauth2.ClientSecret,
+			RedirectURL:  redirectUrl.String(),
+			Endpoint:     endpoint,
+			Scopes:       config.Oauth2.Scopes,
+		}
+		mux.Handle("/oauth2/login", gologinOauth2.StateHandler(stateConfig, gologinOauth2.LoginHandler(oauth2Config, nil)))
+		mux.Handle("/oauth2/callback", gologinOauth2.StateHandler(stateConfig, gologinOauth2.CallbackHandler(oauth2Config, http.HandlerFunc(server.issueOauth2Session), nil)))
 	}
 
 	server.serveMux = mux
@@ -98,19 +131,34 @@ func (server *Server) Serve() error {
 	return http.ListenAndServe(server.config.ListenAddress, server.serveMux)
 }
 
+func (server *Server) saveProfile(w http.ResponseWriter, profile *ProfileData) error {
+	jsonBytes, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+
+	session := server.sessionStore.New(server.config.SessionName)
+	session.Set(sessionProfile, jsonBytes)
+	err = session.Save(w)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (server *Server) issueGithubSession(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	githubUser, err := github.UserFromContext(ctx)
+	githubUser, err := gologinGithub.UserFromContext(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session := server.sessionStore.New(server.config.SessionName)
-	session.Set(sessionType, "github")
-	session.Set(sessionGithubUserId, *githubUser.ID)
-	session.Set(sessionGithubUserLogin, *githubUser.Login)
-	err = session.Save(w)
+	err = server.saveProfile(w, &ProfileData{
+		Type:   "github",
+		Github: githubUser,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -119,29 +167,54 @@ func (server *Server) issueGithubSession(w http.ResponseWriter, req *http.Reques
 	http.Redirect(w, req, "/", http.StatusFound)
 }
 
-func (server *Server) profileHandler(w http.ResponseWriter, req *http.Request) {
-	session, err := server.sessionStore.Get(req, server.config.SessionName)
+func (server *Server) issueOauth2Session(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	token, err := gologinOauth2.TokenFromContext(ctx)
 	if err != nil {
-		loginTemplateData := LoginTemplateData{
-			GithubEnabled: server.config.Github != nil,
-		}
-		server.serveTemplate(w, req, "login.html", &loginTemplateData)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	sessType := session.Get(sessionType).(string)
-	profileTemplateData := ProfileTemplateData{
-		Type: sessType,
-	}
-	switch sessType {
-	case "github":
-		profileTemplateData.Github = &GithubProfile{
-			UserId:    session.Get(sessionGithubUserId).(int64),
-			UserLogin: session.Get(sessionGithubUserLogin).(string),
-		}
+	err = server.saveProfile(w, &ProfileData{
+		Type:   "github",
+		Oauth2: token,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	server.serveTemplate(w, req, "index.html", &profileTemplateData)
+	http.Redirect(w, req, "/", http.StatusFound)
+}
+
+func (server *Server) serveLogin(w http.ResponseWriter, req *http.Request) {
+	loginTemplateData := LoginTemplateData{
+		GithubEnabled: server.config.Github != nil,
+	}
+	server.serveTemplate(w, req, "login.html", &loginTemplateData)
+}
+
+func (server *Server) profileHandler(w http.ResponseWriter, req *http.Request) {
+	session, err := server.sessionStore.Get(req, server.config.SessionName)
+	if err != nil {
+		server.serveLogin(w, req)
+		return
+	}
+
+	profileBytes, ok := session.Get(sessionProfile).([]byte)
+	if !ok {
+		server.serveLogin(w, req)
+		return
+	}
+
+	var profile ProfileData
+	err = json.Unmarshal(profileBytes, &profile)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	server.serveTemplate(w, req, "index.html", &profile)
 }
 
 func (server *Server) logoutHandler(w http.ResponseWriter, req *http.Request) {
@@ -163,4 +236,12 @@ func (server *Server) serveTemplate(w http.ResponseWriter, req *http.Request, te
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func resolveUrl(baseUrl *url.URL, ref string) (*url.URL, error) {
+	refUrl, err := url.Parse(ref)
+	if err != nil {
+		return nil, err
+	}
+	return baseUrl.ResolveReference(refUrl), nil
 }
