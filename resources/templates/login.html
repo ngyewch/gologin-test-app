@@ -11,6 +11,9 @@
         {{if .GithubEnabled}}
         <a href="oauth2/github/login" role="button">Sign in with Github</a>
         {{end}}
+        {{if .OidcEnabled}}
+        <a href="oauth2/oidc/login" role="button">Sign in with OIDC</a>
+        {{end}}
     </div>
 </main>
 </body>

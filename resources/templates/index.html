@@ -20,6 +20,27 @@
         </tr>
     </table>
     {{end}}
+    {{if eq .Type "oidc"}}
+    <h2>OIDC</h2>
+    <table>
+        <tr>
+            <td>Access token</td>
+            <td>{{.Oidc.AccessToken}}</td>
+        </tr>
+        <tr>
+            <td>Refresh token</td>
+            <td>{{.Oidc.RefreshToken}}</td>
+        </tr>
+        <tr>
+            <td>Token type</td>
+            <td>{{.Oidc.TokenType}}</td>
+        </tr>
+        <tr>
+            <td>Expiry</td>
+            <td>{{.Oidc.Expiry}}</td>
+        </tr>
+    </table>
+    {{end}}
     <form class="form" action="/oauth2/logout" method="post">
         <fieldset>
             <div class="grid">

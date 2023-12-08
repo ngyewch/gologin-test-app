@@ -2,12 +2,14 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/dghubble/gologin/v2"
 	gologinGithub "github.com/dghubble/gologin/v2/github"
 	gologinOauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/dghubble/sessions"
 	"github.com/google/go-github/v48/github"
+	"github.com/hashicorp/cap/oidc"
 	"github.com/ngyewch/gologin-test-app/resources"
 	"golang.org/x/oauth2"
 	oauth2Github "golang.org/x/oauth2/github"
@@ -30,11 +32,12 @@ type Server struct {
 type ProfileData struct {
 	Type   string        `json:"type"`
 	Github *github.User  `json:"github"`
-	Oauth2 *oauth2.Token `json:"oauth2"`
+	Oidc   *oauth2.Token `json:"oauth2"`
 }
 
 type LoginTemplateData struct {
 	GithubEnabled bool
+	OidcEnabled   bool
 }
 
 func New(config *Config) (*Server, error) {
@@ -86,40 +89,40 @@ func New(config *Config) (*Server, error) {
 		mux.Handle("/oauth2/github/callback", gologinGithub.StateHandler(stateConfig, gologinGithub.CallbackHandler(oauth2Config, http.HandlerFunc(server.issueGithubSession), nil)))
 	}
 
-	if config.Oauth2 != nil {
-		redirectUrl, err := resolveUrl(baseUrl, "/oauth2/callback")
+	if config.Oidc != nil {
+		redirectUrl, err := resolveUrl(baseUrl, "/oauth2/oidc/callback")
 		if err != nil {
 			return nil, err
 		}
 
-		endpointUrl, err := url.Parse(config.Oauth2.Endpoint)
+		oidcConfig, err := oidc.NewConfig(config.Oidc.IssuerUrl, config.Oidc.ClientId, oidc.ClientSecret(config.Oidc.ClientSecret), []oidc.Alg{oidc.RS256}, nil)
 		if err != nil {
 			return nil, err
 		}
 
-		authUrl, err := resolveUrl(endpointUrl, "oauth2/auth")
+		oidcProvider, err := oidc.NewProvider(oidcConfig)
 		if err != nil {
 			return nil, err
 		}
 
-		tokenUrl, err := resolveUrl(endpointUrl, "oauth2/token")
+		discoveryInfo, err := oidcProvider.DiscoveryInfo(context.Background())
 		if err != nil {
 			return nil, err
 		}
 
 		endpoint := oauth2.Endpoint{
-			AuthURL:  authUrl.String(),
-			TokenURL: tokenUrl.String(),
+			AuthURL:  discoveryInfo.AuthURL,
+			TokenURL: discoveryInfo.TokenURL,
 		}
 		oauth2Config := &oauth2.Config{
-			ClientID:     config.Oauth2.ClientId,
-			ClientSecret: config.Oauth2.ClientSecret,
+			ClientID:     config.Oidc.ClientId,
+			ClientSecret: config.Oidc.ClientSecret,
 			RedirectURL:  redirectUrl.String(),
 			Endpoint:     endpoint,
-			Scopes:       config.Oauth2.Scopes,
+			Scopes:       config.Oidc.Scopes,
 		}
-		mux.Handle("/oauth2/login", gologinOauth2.StateHandler(stateConfig, gologinOauth2.LoginHandler(oauth2Config, nil)))
-		mux.Handle("/oauth2/callback", gologinOauth2.StateHandler(stateConfig, gologinOauth2.CallbackHandler(oauth2Config, http.HandlerFunc(server.issueOauth2Session), nil)))
+		mux.Handle("/oauth2/oidc/login", gologinOauth2.StateHandler(stateConfig, gologinOauth2.LoginHandler(oauth2Config, nil)))
+		mux.Handle("/oauth2/oidc/callback", gologinOauth2.StateHandler(stateConfig, gologinOauth2.CallbackHandler(oauth2Config, http.HandlerFunc(server.issueOidcSession), nil)))
 	}
 
 	server.serveMux = mux
@@ -167,7 +170,7 @@ func (server *Server) issueGithubSession(w http.ResponseWriter, req *http.Reques
 	http.Redirect(w, req, "/", http.StatusFound)
 }
 
-func (server *Server) issueOauth2Session(w http.ResponseWriter, req *http.Request) {
+func (server *Server) issueOidcSession(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	token, err := gologinOauth2.TokenFromContext(ctx)
 	if err != nil {
@@ -176,8 +179,8 @@ func (server *Server) issueOauth2Session(w http.ResponseWriter, req *http.Reques
 	}
 
 	err = server.saveProfile(w, &ProfileData{
-		Type:   "github",
-		Oauth2: token,
+		Type: "oidc",
+		Oidc: token,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -190,6 +193,7 @@ func (server *Server) issueOauth2Session(w http.ResponseWriter, req *http.Reques
 func (server *Server) serveLogin(w http.ResponseWriter, req *http.Request) {
 	loginTemplateData := LoginTemplateData{
 		GithubEnabled: server.config.Github != nil,
+		OidcEnabled:   server.config.Oidc != nil,
 	}
 	server.serveTemplate(w, req, "login.html", &loginTemplateData)
 }

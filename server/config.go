@@ -6,7 +6,7 @@ type Config struct {
 	SessionName   string        `koanf:"sessionName"`
 	SessionSecret string        `koanf:"sessionSecret"`
 	Github        *GithubConfig `koanf:"github"`
-	Oauth2        *Oauth2Config `koanf:"oauth2"`
+	Oidc          *OidcConfig   `koanf:"oidc"`
 }
 
 type GithubConfig struct {
@@ -14,8 +14,8 @@ type GithubConfig struct {
 	ClientSecret string `koanf:"clientSecret"`
 }
 
-type Oauth2Config struct {
-	Endpoint     string   `koanf:"endpoint"`
+type OidcConfig struct {
+	IssuerUrl    string   `koanf:"issuerUrl"`
 	ClientId     string   `koanf:"clientId"`
 	ClientSecret string   `koanf:"clientSecret"`
 	Scopes       []string `koanf:"scopes"`
