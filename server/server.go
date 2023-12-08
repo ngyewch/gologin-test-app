@@ -31,9 +31,13 @@ type LoginTemplateData struct {
 }
 
 type ProfileTemplateData struct {
-	Type            string
-	GithubUserId    int64
-	GithubUserLogin string
+	Type   string
+	Github *GithubProfile
+}
+
+type GithubProfile struct {
+	UserId    int64
+	UserLogin string
 }
 
 func New(config *Config) (*Server, error) {
@@ -131,8 +135,10 @@ func (server *Server) profileHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	switch sessType {
 	case "github":
-		profileTemplateData.GithubUserId = session.Get(sessionGithubUserId).(int64)
-		profileTemplateData.GithubUserLogin = session.Get(sessionGithubUserLogin).(string)
+		profileTemplateData.Github = &GithubProfile{
+			UserId:    session.Get(sessionGithubUserId).(int64),
+			UserLogin: session.Get(sessionGithubUserLogin).(string),
+		}
 	}
 
 	server.serveTemplate(w, req, "index.html", &profileTemplateData)
