@@ -1,0 +1,32 @@
+<html>
+<head>
+    <title>Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    {{if eq .Type "github"}}
+    <h2>Github</h2>
+    <table>
+        <tr>
+            <td>User ID</td>
+            <td>{{.GithubUserId}}</td>
+        </tr>
+        <tr>
+            <td>User login</td>
+            <td>{{.GithubUserLogin}}</td>
+        </tr>
+    </table>
+    {{end}}
+    <form class="form" action="/oauth2/logout" method="post">
+        <fieldset>
+            <div class="grid">
+                <button type="submit" name="submit">Logout</button>
+            </div>
+        </fieldset>
+    </form>
+</main>
+</body>
+</html>

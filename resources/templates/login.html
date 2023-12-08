@@ -1,0 +1,17 @@
+<html>
+<head>
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    <div class="grid">
+        {{if .GithubEnabled}}
+        <a href="oauth2/github/login" role="button">Sign in with Github</a>
+        {{end}}
+    </div>
+</main>
+</body>
+</html>

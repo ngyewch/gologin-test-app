@@ -1,0 +1,24 @@
+version: 3
+
+tasks:
+  clean:
+    desc: Clean
+    cmds:
+      - rm -rf dist
+
+  build:
+    desc: Build
+    cmds:
+      - goreleaser --snapshot --clean
+
+  build-single:
+    desc: Build (single)
+    cmds:
+      - goreleaser build --snapshot --clean --single-target --output dist/gologin-test-app
+
+  dependencyUpdates:
+    desc: Show dependency updates
+    cmds:
+      - go mod download
+      - go mod tidy
+      - go list -u -m -json all | go run github.com/psampaz/go-mod-outdated@v0.9.0 -update -direct
