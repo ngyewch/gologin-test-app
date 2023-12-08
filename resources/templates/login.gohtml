@@ -8,11 +8,15 @@
 <body>
 <main class="container">
     <div class="grid">
-        {{if .GithubEnabled}}
-        <a href="oauth2/github/login" role="button">Sign in with Github</a>
+        {{if .Github}}
+            {{with .Github}}
+                <a href="oauth2/github/login" role="button">Sign in with Github</a>
+            {{end}}
         {{end}}
-        {{if .OidcEnabled}}
-        <a href="oauth2/oidc/login" role="button">Sign in with OIDC</a>
+        {{if .Oidc}}
+            {{with .Oidc}}
+                <a href="oauth2/oidc/login" role="button">Sign in with OIDC</a>
+            {{end}}
         {{end}}
     </div>
 </main>

@@ -1,0 +1,57 @@
+<html>
+<head>
+    <title>Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    {{if .Github}}
+        {{with .Github}}
+            <h2>Github</h2>
+            <table>
+                <tr>
+                    <td>User ID</td>
+                    <td>{{.ID}}</td>
+                </tr>
+                <tr>
+                    <td>User login</td>
+                    <td>{{.Login}}</td>
+                </tr>
+            </table>
+        {{end}}
+    {{end}}
+    {{if .Oidc}}
+        {{with .Oidc}}
+            <h2>OIDC</h2>
+            <table>
+                <tr>
+                    <td>Access token</td>
+                    <td>{{.AccessToken}}</td>
+                </tr>
+                <tr>
+                    <td>Refresh token</td>
+                    <td>{{.RefreshToken}}</td>
+                </tr>
+                <tr>
+                    <td>Token type</td>
+                    <td>{{.TokenType}}</td>
+                </tr>
+                <tr>
+                    <td>Expiry</td>
+                    <td>{{.Expiry}}</td>
+                </tr>
+            </table>
+        {{end}}
+    {{end}}
+    <form class="form" action="/oauth2/logout" method="post">
+        <fieldset>
+            <div class="grid">
+                <button type="submit" name="submit">Logout</button>
+            </div>
+        </fieldset>
+    </form>
+</main>
+</body>
+</html>

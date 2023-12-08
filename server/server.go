@@ -35,11 +35,6 @@ type ProfileData struct {
 	Oidc   *oauth2.Token `json:"oauth2"`
 }
 
-type LoginTemplateData struct {
-	GithubEnabled bool
-	OidcEnabled   bool
-}
-
 func New(config *Config) (*Server, error) {
 	baseUrl, err := url.Parse(config.BaseUrl)
 	if err != nil {
@@ -53,7 +48,7 @@ func New(config *Config) (*Server, error) {
 	}
 	sessionStore := sessions.NewCookieStore[any](cookieConfig, []byte(config.SessionSecret), nil)
 
-	templates, err := template.ParseFS(resources.TemplateFS, "templates/*.html")
+	templates, err := template.ParseFS(resources.TemplateFS, "templates/*.gohtml")
 	if err != nil {
 		return nil, err
 	}
@@ -191,11 +186,7 @@ func (server *Server) issueOidcSession(w http.ResponseWriter, req *http.Request)
 }
 
 func (server *Server) serveLogin(w http.ResponseWriter, req *http.Request) {
-	loginTemplateData := LoginTemplateData{
-		GithubEnabled: server.config.Github != nil,
-		OidcEnabled:   server.config.Oidc != nil,
-	}
-	server.serveTemplate(w, req, "login.html", &loginTemplateData)
+	server.serveTemplate(w, req, "login.gohtml", server.config)
 }
 
 func (server *Server) profileHandler(w http.ResponseWriter, req *http.Request) {
@@ -218,7 +209,7 @@ func (server *Server) profileHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	server.serveTemplate(w, req, "index.html", &profile)
+	server.serveTemplate(w, req, "index.gohtml", &profile)
 }
 
 func (server *Server) logoutHandler(w http.ResponseWriter, req *http.Request) {
