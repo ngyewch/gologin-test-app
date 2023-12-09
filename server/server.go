@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/dghubble/gologin/v2"
 	gologinGithub "github.com/dghubble/gologin/v2/github"
 	gologinOauth2 "github.com/dghubble/gologin/v2/oauth2"
@@ -181,7 +180,6 @@ func (server *Server) issueOidcSession(w http.ResponseWriter, req *http.Request)
 	idToken := token.Extra("id_token").(string)
 	claims := make(map[string]interface{})
 	if idToken != "" {
-		fmt.Printf("id_token: %s\n", idToken)
 		t, err := jwt.ParseSigned(idToken)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -192,7 +190,6 @@ func (server *Server) issueOidcSession(w http.ResponseWriter, req *http.Request)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fmt.Printf("%v\n", claims)
 	}
 
 	err = server.saveProfile(w, &ProfileData{
