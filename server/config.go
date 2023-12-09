@@ -10,8 +10,9 @@ type Config struct {
 }
 
 type GithubConfig struct {
-	ClientId     string `koanf:"clientId"`
-	ClientSecret string `koanf:"clientSecret"`
+	ClientId     string   `koanf:"clientId"`
+	ClientSecret string   `koanf:"clientSecret"`
+	Scopes       []string `koanf:"scopes"`
 }
 
 type OidcConfig struct {

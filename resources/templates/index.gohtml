@@ -19,6 +19,14 @@
                     <td>User login</td>
                     <td>{{.Login}}</td>
                 </tr>
+                <tr>
+                    <td>Name</td>
+                    <td>{{.Name}}</td>
+                </tr>
+                <tr>
+                    <td>Email</td>
+                    <td>{{.Email}}</td>
+                </tr>
             </table>
         {{end}}
     {{end}}
@@ -44,6 +52,21 @@
                 </tr>
             </table>
         {{end}}
+    {{end}}
+    {{if .Claims}}
+        <h2>Claims</h2>
+        <table>
+            <tr>
+                <th>Key</th>
+                <th>Value</th>
+            </tr>
+            {{ range $key, $value := .Claims }}
+                <tr>
+                    <td>{{ $key }}</td>
+                    <td>{{ $value }}</td>
+                </tr>
+            {{ end }}
+        </table>
     {{end}}
     <form class="form" action="/oauth2/logout" method="post">
         <fieldset>

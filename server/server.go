@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/dghubble/gologin/v2"
 	gologinGithub "github.com/dghubble/gologin/v2/github"
 	gologinOauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/dghubble/sessions"
+	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/go-github/v48/github"
 	"github.com/hashicorp/cap/oidc"
 	"github.com/ngyewch/gologin-test-app/resources"
@@ -27,12 +29,14 @@ type Server struct {
 	sessionStore sessions.Store[any]
 	templates    *template.Template
 	serveMux     *http.ServeMux
+	oidcProvider *oidc.Provider
 }
 
 type ProfileData struct {
-	Type   string        `json:"type"`
-	Github *github.User  `json:"github"`
-	Oidc   *oauth2.Token `json:"oauth2"`
+	Type   string                 `json:"type"`
+	Github *github.User           `json:"github"`
+	Oidc   *oauth2.Token          `json:"oauth2"`
+	Claims map[string]interface{} `json:"claims"`
 }
 
 func New(config *Config) (*Server, error) {
@@ -79,6 +83,7 @@ func New(config *Config) (*Server, error) {
 			ClientSecret: config.Github.ClientSecret,
 			RedirectURL:  redirectUrl.String(),
 			Endpoint:     oauth2Github.Endpoint,
+			Scopes:       config.Github.Scopes,
 		}
 		mux.Handle("/oauth2/github/login", gologinGithub.StateHandler(stateConfig, gologinGithub.LoginHandler(oauth2Config, nil)))
 		mux.Handle("/oauth2/github/callback", gologinGithub.StateHandler(stateConfig, gologinGithub.CallbackHandler(oauth2Config, http.HandlerFunc(server.issueGithubSession), nil)))
@@ -99,6 +104,7 @@ func New(config *Config) (*Server, error) {
 		if err != nil {
 			return nil, err
 		}
+		server.oidcProvider = oidcProvider
 
 		discoveryInfo, err := oidcProvider.DiscoveryInfo(context.Background())
 		if err != nil {
@@ -172,10 +178,27 @@ func (server *Server) issueOidcSession(w http.ResponseWriter, req *http.Request)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	idToken := token.Extra("id_token").(string)
+	claims := make(map[string]interface{})
+	if idToken != "" {
+		fmt.Printf("id_token: %s\n", idToken)
+		t, err := jwt.ParseSigned(idToken)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		err = t.UnsafeClaimsWithoutVerification(&claims)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Printf("%v\n", claims)
+	}
 
 	err = server.saveProfile(w, &ProfileData{
-		Type: "oidc",
-		Oidc: token,
+		Type:   "oidc",
+		Oidc:   token,
+		Claims: claims,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

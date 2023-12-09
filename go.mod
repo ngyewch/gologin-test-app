@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/dghubble/sessions v0.4.0
+	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/google/go-github/v48 v48.2.0
 	github.com/hashicorp/cap v0.4.0
 	github.com/knadh/koanf/parsers/json v0.1.0
@@ -21,7 +22,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
