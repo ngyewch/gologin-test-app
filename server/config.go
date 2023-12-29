@@ -21,3 +21,12 @@ type OidcConfig struct {
 	ClientSecret string   `koanf:"clientSecret"`
 	Scopes       []string `koanf:"scopes"`
 }
+
+var (
+	DefaultConfig = Config{
+		ListenAddress: ":8080",
+		BaseUrl:       "http://127.0.0.1:8080/",
+		SessionName:   "gologin-test-app",
+		SessionSecret: "gologin-test-app-secret",
+	}
+)

@@ -29,6 +29,11 @@ func serve(cmd *cobra.Command, args []string) error {
 	}
 
 	var config server.Config
+	err = deepCopy(&server.DefaultConfig, &config)
+	if err != nil {
+		return err
+	}
+
 	err = k.Unmarshal("", &config)
 	if err != nil {
 		return err
