@@ -33,9 +33,13 @@ func mergeConfig(k *koanf.Koanf, configFile string) error {
 		}
 	}
 
-	err := k.Load(env.Provider("GOLOGIN_", ".", func(s string) string {
-		s2 := strings.Replace(strings.ToLower(strings.TrimPrefix(s, "GOLOGIN_")), "_", ".", -1)
-		return s2
+	err := k.Load(env.ProviderWithValue("GOLOGIN_", ".", func(s string, v string) (string, interface{}) {
+		key := strings.Replace(strings.ToLower(strings.TrimPrefix(s, "GOLOGIN_")), "_", ".", -1)
+		var value interface{} = v
+		if key == "github.scopes" || key == "oidc.scopes" {
+			value = strings.Split(v, ",")
+		}
+		return key, value
 	}), nil)
 	if err != nil {
 		return err
