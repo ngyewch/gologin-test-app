@@ -5,9 +5,9 @@ go 1.21
 require (
 	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/dghubble/sessions v0.4.0
-	github.com/go-jose/go-jose/v3 v3.0.0
+	github.com/go-jose/go-jose/v3 v3.0.1
 	github.com/google/go-github/v48 v48.2.0
-	github.com/hashicorp/cap v0.4.0
+	github.com/hashicorp/cap v0.4.1
 	github.com/knadh/koanf/parsers/json v0.1.0
 	github.com/knadh/koanf/parsers/toml v0.1.0
 	github.com/knadh/koanf/parsers/yaml v0.1.0
