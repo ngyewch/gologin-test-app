@@ -1,3 +1,4 @@
+version: 2
 project_name: gologin-test-app
 before:
   hooks:
@@ -21,6 +22,6 @@ archives:
 checksum:
   name_template: 'checksums.txt'
 changelog:
-  skip: true
+  disable: true
 release:
   disable: false
