@@ -9,7 +9,7 @@ import (
 	gologinOauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/dghubble/sessions"
 	"github.com/go-jose/go-jose/v3/jwt"
-	"github.com/google/go-github/v48/github"
+	"github.com/google/go-github/v52/github"
 	"github.com/hashicorp/cap/oidc"
 	"github.com/ngyewch/gologin-test-app/resources"
 	"golang.org/x/oauth2"
