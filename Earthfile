@@ -7,6 +7,7 @@ build:
 
     ARG VERSION=v0.2.0
 
+    RUN git config --global advice.detachedHead false
     RUN git clone https://github.com/ngyewch/gologin-test-app.git
     WORKDIR gologin-test-app
     RUN git checkout ${VERSION}
