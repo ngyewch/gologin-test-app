@@ -5,7 +5,7 @@ build:
 
     RUN apt-get update && apt-get install -y --no-install-recommends musl-dev musl-tools
 
-    ARG VERSION=v0.1.0
+    ARG VERSION=v0.2.0
 
     RUN git clone https://github.com/ngyewch/gologin-test-app.git
     WORKDIR gologin-test-app
@@ -17,7 +17,7 @@ build:
 docker:
     FROM scratch
 
-    ARG VERSION=v0.1.0
+    ARG VERSION=v0.2.0
 
     COPY (+build/gologin-test-app --VERSION=${VERSION}) /usr/local/bin/
 
