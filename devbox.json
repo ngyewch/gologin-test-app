@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.0/.schema/devbox.schema.json",
+  "packages": {
+    "bash":    "5.2p37",
+    "curl":    "8.12.1",
+    "docker":  "27.5.1",
+    "earthly": "0.8.15",
+    "git":     "2.48.1",
+    "mise":    "2025.2.7",
+    "which":   "2.23"
+  }
+}
