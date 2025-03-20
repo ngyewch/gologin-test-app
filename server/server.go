@@ -17,6 +17,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 const (
@@ -105,7 +106,10 @@ func New(config *Config) (*Server, error) {
 		}
 		server.oidcProvider = oidcProvider
 
-		discoveryInfo, err := oidcProvider.DiscoveryInfo(context.Background())
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		discoveryInfo, err := oidcProvider.DiscoveryInfo(ctx)
 		if err != nil {
 			return nil, err
 		}
