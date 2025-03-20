@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/dghubble/gologin/v2"
 	gologinGithub "github.com/dghubble/gologin/v2/github"
 	gologinOauth2 "github.com/dghubble/gologin/v2/oauth2"
@@ -11,12 +12,14 @@ import (
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/go-github/v52/github"
 	"github.com/hashicorp/cap/oidc"
+	"github.com/inetaf/tcpproxy"
 	"github.com/ngyewch/gologin-test-app/resources"
 	"golang.org/x/oauth2"
 	oauth2Github "golang.org/x/oauth2/github"
 	"html/template"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -135,6 +138,21 @@ func New(config *Config) (*Server, error) {
 }
 
 func (server *Server) Serve() error {
+	if len(server.config.TcpProxies) > 0 {
+		var p tcpproxy.Proxy
+		for _, tcpProxy := range server.config.TcpProxies {
+			parts := strings.Split(tcpProxy, ":")
+			if len(parts) != 3 {
+				return fmt.Errorf("invalid TCP proxy: %s", tcpProxy)
+			}
+			p.AddRoute(fmt.Sprintf(":%s", parts[0]), tcpproxy.To(fmt.Sprintf("%s:%s", parts[1], parts[2])))
+		}
+		err := p.Start()
+		if err != nil {
+			return err
+		}
+	}
+
 	return http.ListenAndServe(server.config.ListenAddress, server.serveMux)
 }
 

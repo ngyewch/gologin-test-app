@@ -7,6 +7,7 @@ type Config struct {
 	SessionSecret string        `koanf:"sessionSecret"`
 	Github        *GithubConfig `koanf:"github"`
 	Oidc          *OidcConfig   `koanf:"oidc"`
+	TcpProxies    []string      `koanf:"tcpProxies"`
 }
 
 type GithubConfig struct {

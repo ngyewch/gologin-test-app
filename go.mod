@@ -8,6 +8,7 @@ require (
 	github.com/go-jose/go-jose/v3 v3.0.4
 	github.com/google/go-github/v52 v52.0.0
 	github.com/hashicorp/cap v0.9.0
+	github.com/inetaf/tcpproxy v0.0.0-20250222171855-c4b9df066048
 	github.com/knadh/koanf/parsers/json v0.1.0
 	github.com/knadh/koanf/parsers/toml v0.1.0
 	github.com/knadh/koanf/parsers/yaml v0.1.0
