@@ -2,3 +2,4 @@
 go = '1.25.0'
 task = '3.44.1'
 goreleaser = '2.11.2'
+'ubi:psampaz/go-mod-outdated' = '0.9.0'
