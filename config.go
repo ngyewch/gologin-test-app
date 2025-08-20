@@ -3,14 +3,15 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
+	"path/filepath"
+	"strings"
+
 	"github.com/knadh/koanf/parsers/json"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
-	"path/filepath"
-	"strings"
 )
 
 func mergeConfig(k *koanf.Koanf, configFile string) error {

@@ -5,6 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/dghubble/gologin/v2"
 	gologinGithub "github.com/dghubble/gologin/v2/github"
 	gologinOauth2 "github.com/dghubble/gologin/v2/oauth2"
@@ -16,11 +22,6 @@ import (
 	"github.com/ngyewch/gologin-test-app/resources"
 	"golang.org/x/oauth2"
 	oauth2Github "golang.org/x/oauth2/github"
-	"html/template"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 const (
